@@ -1,5 +1,15 @@
 import { DrumEngine } from './drum-engine'
-import { DRUM_LANES, emptyPattern, trapStarterPattern, type BeatPattern, type DrumLane } from './types'
+import {
+  ACCENT_VELOCITY,
+  DRUM_LANES,
+  NORMAL_VELOCITY,
+  STEP_COUNT,
+  emptyPattern,
+  trapStarterPattern,
+  type BeatPattern,
+  type DrumLane,
+  type DrumVoiceSettings,
+} from './types'
 
 const LOOKAHEAD_MS = 25
 const SCHEDULE_AHEAD_SECONDS = 0.1
@@ -19,7 +29,6 @@ export class BeatSequencer {
 
   async start(): Promise<void> {
     if (this.playing) return
-
     await this.engine.arm()
     this.playing = true
     this.step = 0
@@ -37,8 +46,20 @@ export class BeatSequencer {
     this.onStep?.(-1)
   }
 
-  toggle(lane: DrumLane, step: number): boolean {
-    const next = !this.pattern[lane][step]
+  panic(): void {
+    this.stop()
+    this.engine.panic()
+  }
+
+  toggle(lane: DrumLane, step: number): number {
+    const next = this.pattern[lane][step] > 0 ? 0 : NORMAL_VELOCITY
+    this.pattern[lane][step] = next
+    return next
+  }
+
+  toggleAccent(lane: DrumLane, step: number): number {
+    const current = this.pattern[lane][step]
+    const next = current >= ACCENT_VELOCITY ? NORMAL_VELOCITY : ACCENT_VELOCITY
     this.pattern[lane][step] = next
     return next
   }
@@ -49,6 +70,18 @@ export class BeatSequencer {
 
   loadTrapStarter(): void {
     this.pattern = trapStarterPattern()
+  }
+
+  getVoice(lane: DrumLane): DrumVoiceSettings {
+    return this.engine.getVoice(lane)
+  }
+
+  updateVoice(lane: DrumLane, changes: Partial<DrumVoiceSettings>): void {
+    this.engine.updateVoice(lane, changes)
+  }
+
+  preview(lane: DrumLane): Promise<void> {
+    return this.engine.preview(lane)
   }
 
   private schedule(): void {
@@ -62,7 +95,8 @@ export class BeatSequencer {
 
   private scheduleStep(step: number, time: number): void {
     DRUM_LANES.forEach((lane) => {
-      if (this.pattern[lane][step]) this.engine.play(lane, time)
+      const velocity = this.pattern[lane][step]
+      if (velocity > 0) this.engine.play(lane, time, velocity)
     })
 
     const delay = Math.max(0, (time - this.engine.currentTime) * 1000)
@@ -70,7 +104,6 @@ export class BeatSequencer {
       this.visualTimers.delete(timer)
       if (this.playing) this.onStep?.(step)
     }, delay)
-
     this.visualTimers.add(timer)
   }
 
@@ -78,6 +111,6 @@ export class BeatSequencer {
     const base = 60 / Math.max(40, this.bpm) / 4
     const swingOffset = this.step % 2 === 0 ? this.swing : -this.swing
     this.nextStepTime += base * (1 + swingOffset)
-    this.step = (this.step + 1) % 16
+    this.step = (this.step + 1) % STEP_COUNT
   }
 }
