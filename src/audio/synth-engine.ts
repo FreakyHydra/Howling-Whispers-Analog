@@ -169,7 +169,7 @@ function midiToFrequency(midi: number): number {
   return 440 * 2 ** ((midi - 69) / 12)
 }
 
-function makeDriveCurve(amount: number): Float32Array {
+function makeDriveCurve(amount: number): Float32Array<ArrayBuffer> {
   const samples = 2048
   const curve = new Float32Array(samples)
   const k = 1 + Math.max(0, amount) * 55
