@@ -149,8 +149,12 @@ function applyWave(context: AudioContext, oscillator: OscillatorNode, settings: 
 
 function pulseWave(context: AudioContext, duty: number): PeriodicWave {
   const harmonics = 48
-  const real = new Float32Array<ArrayBuffer>(harmonics + 1)
-  const imag = new Float32Array<ArrayBuffer>(harmonics + 1)
+  const real: Float32Array<ArrayBuffer> = new Float32Array(
+    new ArrayBuffer((harmonics + 1) * Float32Array.BYTES_PER_ELEMENT),
+  )
+  const imag: Float32Array<ArrayBuffer> = new Float32Array(
+    new ArrayBuffer((harmonics + 1) * Float32Array.BYTES_PER_ELEMENT),
+  )
   const d = Math.min(0.875, Math.max(0.125, duty))
   real[0] = 2 * d - 1
   for (let n = 1; n <= harmonics; n += 1) {
