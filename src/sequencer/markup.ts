@@ -1,4 +1,5 @@
-import { DRUM_LANES, STEP_COUNT, type DrumLane } from './types'
+import { DRUM_LANES, STEP_COUNT, createDefaultDrumKit, type DrumLane } from './types'
+import { formatVoiceValue, type VoiceNumericParam } from './voice-format'
 
 const LABELS: Record<DrumLane, string> = {
   kick: 'KICK',
@@ -9,6 +10,7 @@ const LABELS: Record<DrumLane, string> = {
 }
 
 export function renderBeatSequencerMarkup(): string {
+  const kit = createDefaultDrumKit()
   return `
     <section class="sequencer" aria-label="16 step drum sequencer">
       <div class="sequencer-head">
@@ -16,7 +18,7 @@ export function renderBeatSequencerMarkup(): string {
           <p class="eyebrow">RHYTHM MACHINE</p>
           <div class="module-title sequencer-title">
             <span>16 STEP SEQUENCER</span>
-            <small>BEATS, TRAPS, ACCIDENTS</small>
+            <small>CLICK = STEP · SHIFT+CLICK = ACCENT</small>
           </div>
         </div>
 
@@ -45,6 +47,28 @@ export function renderBeatSequencerMarkup(): string {
         </div>
         ${DRUM_LANES.map((lane) => laneRow(lane)).join('')}
       </div>
+
+      <div class="voice-editor">
+        <div class="voice-editor-head">
+          <div>
+            <p class="eyebrow">EDIT INSTRUMENT</p>
+            <h3 id="voice-name">KICK</h3>
+          </div>
+          <div class="voice-actions">
+            <button id="voice-preview" class="seq-action" type="button">TRIGGER</button>
+            <button id="voice-mute" class="seq-action toggle" type="button" aria-pressed="false">MUTE</button>
+            <button id="voice-solo" class="seq-action toggle" type="button" aria-pressed="false">SOLO</button>
+          </div>
+        </div>
+
+        <div class="voice-controls">
+          ${voiceRange('level', 'Level', 0, 1, kit.kick.level, 0.01)}
+          ${voiceRange('tune', 'Tune', -24, 24, kit.kick.tune, 1)}
+          ${voiceRange('decay', 'Decay', 0.03, 2.4, kit.kick.decay, 0.01)}
+          ${voiceRange('tone', 'Tone', 0, 1, kit.kick.tone, 0.01)}
+          ${voiceRange('pan', 'Pan', -1, 1, kit.kick.pan, 0.01)}
+        </div>
+      </div>
     </section>
   `
 }
@@ -52,7 +76,7 @@ export function renderBeatSequencerMarkup(): string {
 function laneRow(lane: DrumLane): string {
   return `
     <div class="sequence-row">
-      <strong>${LABELS[lane]}</strong>
+      <button class="lane-select ${lane === 'kick' ? 'selected' : ''}" data-voice-select="${lane}" type="button">${LABELS[lane]}</button>
       ${Array.from({ length: STEP_COUNT }, (_, step) => `
         <button
           class="seq-step ${step % 4 === 0 ? 'bar-start' : ''}"
@@ -64,5 +88,14 @@ function laneRow(lane: DrumLane): string {
         ></button>
       `).join('')}
     </div>
+  `
+}
+
+function voiceRange(param: VoiceNumericParam, label: string, min: number, max: number, value: number, step: number): string {
+  return `
+    <label class="control compact voice-control">
+      <span class="control-top"><span>${label}</span><output id="voice-${param}-value">${formatVoiceValue(param, value)}</output></span>
+      <input id="voice-${param}" data-voice-param="${param}" type="range" min="${min}" max="${max}" value="${value}" step="${step}" />
+    </label>
   `
 }
