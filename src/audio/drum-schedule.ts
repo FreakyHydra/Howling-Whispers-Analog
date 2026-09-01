@@ -225,7 +225,7 @@ function pitchRatio(semitones: number): number {
   return 2 ** (semitones / 12)
 }
 
-function saturationCurve(amount: number): Float32Array {
+function saturationCurve(amount: number): Float32Array<ArrayBuffer> {
   const curve = new Float32Array(1024)
   const drive = 1 + clamp(amount, 0, 1) * 22
   for (let i = 0; i < curve.length; i += 1) {
