@@ -1,3 +1,4 @@
+import { cloneLoopState, type LoopState } from '../loops/types'
 import { DrumEngine } from './drum-engine'
 import {
   ACCENT_VELOCITY,
@@ -21,6 +22,7 @@ export class BeatSequencer {
   swing = 0.12
   playing = false
   onStep?: (step: number) => void
+  onChange?: () => void
 
   private step = 0
   private nextStepTime = 0
@@ -54,6 +56,7 @@ export class BeatSequencer {
   toggle(lane: DrumLane, step: number): number {
     const next = this.pattern[lane][step] > 0 ? 0 : NORMAL_VELOCITY
     this.pattern[lane][step] = next
+    this.changed()
     return next
   }
 
@@ -61,15 +64,28 @@ export class BeatSequencer {
     const current = this.pattern[lane][step]
     const next = current >= ACCENT_VELOCITY ? NORMAL_VELOCITY : ACCENT_VELOCITY
     this.pattern[lane][step] = next
+    this.changed()
     return next
   }
 
   clear(): void {
     this.pattern = emptyPattern()
+    this.changed()
   }
 
   loadTrapStarter(): void {
     this.pattern = trapStarterPattern()
+    this.changed()
+  }
+
+  setBpm(value: number): void {
+    this.bpm = Math.min(220, Math.max(40, Math.round(value)))
+    this.changed()
+  }
+
+  setSwing(value: number): void {
+    this.swing = Math.min(0.4, Math.max(0, value))
+    this.changed()
   }
 
   getVoice(lane: DrumLane): DrumVoiceSettings {
@@ -78,10 +94,33 @@ export class BeatSequencer {
 
   updateVoice(lane: DrumLane, changes: Partial<DrumVoiceSettings>): void {
     this.engine.updateVoice(lane, changes)
+    this.changed()
   }
 
   preview(lane: DrumLane): Promise<void> {
     return this.engine.preview(lane)
+  }
+
+  getState(): LoopState {
+    return cloneLoopState({
+      bpm: this.bpm,
+      swing: this.swing,
+      pattern: this.pattern,
+      kit: this.engine.getKit(),
+    })
+  }
+
+  loadState(state: LoopState): void {
+    const copy = cloneLoopState(state)
+    this.bpm = copy.bpm
+    this.swing = copy.swing
+    this.pattern = copy.pattern
+    this.engine.applyKit(copy.kit)
+    this.changed()
+  }
+
+  private changed(): void {
+    this.onChange?.()
   }
 
   private schedule(): void {
