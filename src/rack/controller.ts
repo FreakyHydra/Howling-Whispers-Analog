@@ -7,9 +7,7 @@ type RackState = {
 const STORAGE_KEY = 'hw-analog-rack-v1'
 
 export function setupModuleRack(): void {
-  const rack = document.querySelector<HTMLElement>('#sequencer-rack')
-  if (!rack) return
-
+  const rack = requiredRack()
   const modules = (): HTMLElement[] => Array.from(rack.querySelectorAll<HTMLElement>('[data-rack-module]'))
 
   restore(rack)
@@ -85,6 +83,12 @@ export function setupModuleRack(): void {
       button.textContent = module && !module.hidden ? `${label(id)} ACTIVE` : `+ ${label(id)}`
     })
   }
+}
+
+function requiredRack(): HTMLElement {
+  const rack = document.querySelector<HTMLElement>('#sequencer-rack')
+  if (!rack) throw new Error('Missing sequencer module rack')
+  return rack
 }
 
 function move(module: HTMLElement, direction: -1 | 1): void {
