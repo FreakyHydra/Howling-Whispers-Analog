@@ -40,6 +40,12 @@ export function renderBeatSequencerMarkup(): string {
         </label>
       </div>
 
+      <div class="loop-save-strip">
+        <input id="loop-name" class="loop-name" type="text" maxlength="60" value="Untitled Loop" aria-label="Loop name" />
+        <button id="loop-save" class="seq-action primary" type="button">SAVE LOOP LOCALLY</button>
+        <span id="loop-save-status" class="loop-save-status">Current work also autosaves in this browser.</span>
+      </div>
+
       <div class="sequence-grid">
         <div class="sequence-ruler">
           <span></span>
