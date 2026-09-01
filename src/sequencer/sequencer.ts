@@ -1,4 +1,4 @@
-import { cloneLoopState, type LoopState } from '../loops/types'
+import { cloneDrumState, type DrumLoopState } from '../loops/types'
 import { DrumEngine } from './drum-engine'
 import {
   ACCENT_VELOCITY,
@@ -101,8 +101,8 @@ export class BeatSequencer {
     return this.engine.preview(lane)
   }
 
-  getState(): LoopState {
-    return cloneLoopState({
+  getState(): DrumLoopState {
+    return cloneDrumState({
       bpm: this.bpm,
       swing: this.swing,
       pattern: this.pattern,
@@ -110,8 +110,8 @@ export class BeatSequencer {
     })
   }
 
-  loadState(state: LoopState): void {
-    const copy = cloneLoopState(state)
+  loadState(state: DrumLoopState): void {
+    const copy = cloneDrumState(state)
     this.bpm = copy.bpm
     this.swing = copy.swing
     this.pattern = copy.pattern

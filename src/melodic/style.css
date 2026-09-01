@@ -1,0 +1,96 @@
+.melodic {
+  padding: 24px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(201,135,82,.035), transparent 45%), #090807;
+}
+
+.melodic-head,
+.melodic-editor {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.melodic-head { margin-bottom: 18px; }
+.melodic-title { margin: 0; min-width: 300px; }
+
+.melodic-steps {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(52px, 1fr));
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 7px;
+}
+
+.mel-step {
+  min-width: 52px;
+  min-height: 70px;
+  padding: 8px 5px;
+  border: 1px solid #39271f;
+  border-radius: 5px;
+  color: #665b55;
+  background: #0b0908;
+  cursor: pointer;
+}
+
+.mel-step small,
+.mel-step strong { display: block; }
+.mel-step small { margin-bottom: 17px; font-size: .52rem; color: #5d5149; }
+.mel-step strong { font-size: .63rem; letter-spacing: .05em; }
+.mel-step.bar-start { border-left-color: #805237; }
+
+.mel-step.active {
+  border-color: #a86943;
+  color: #efb989;
+  background: linear-gradient(180deg, #3c2418, #160e0b);
+}
+
+.mel-step.selected {
+  outline: 1px solid var(--copper-bright);
+  outline-offset: 2px;
+}
+
+.mel-step.playhead {
+  box-shadow: 0 0 16px rgba(225,170,119,.32), inset 0 0 16px rgba(225,170,119,.1);
+}
+
+.melodic-editor {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(201,135,82,.2);
+  border-radius: 9px;
+  background: rgba(0,0,0,.2);
+}
+
+.melodic-editor h3 {
+  margin: 0 0 12px;
+  color: var(--copper-bright);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+
+.melodic-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  gap: 16px;
+  width: min(680px, 100%);
+}
+
+.melodic-control {
+  padding: 10px;
+  border: 1px solid rgba(201,135,82,.12);
+  border-radius: 6px;
+}
+
+@media (max-width: 900px) {
+  .melodic-head,
+  .melodic-editor { align-items: flex-start; flex-direction: column; }
+  .melodic-controls { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .melodic { padding: 19px 16px; }
+  .melodic-controls { grid-template-columns: 1fr; }
+}

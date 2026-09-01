@@ -42,7 +42,11 @@ export function renderBeatSequencerMarkup(): string {
 
       <div class="loop-save-strip">
         <input id="loop-name" class="loop-name" type="text" maxlength="60" value="Untitled Loop" aria-label="Loop name" />
-        <button id="loop-save" class="seq-action primary" type="button">SAVE LOOP LOCALLY</button>
+        <div class="loop-save-actions" aria-label="Save loop type">
+          <button id="loop-save-drums" class="seq-action" type="button">SAVE DRUMS</button>
+          <button id="loop-save-synth" class="seq-action" type="button">SAVE SYNTH</button>
+          <button id="loop-save-combined" class="seq-action primary" type="button">SAVE COMBINED</button>
+        </div>
         <span id="loop-save-status" class="loop-save-status">Current work also autosaves in this browser.</span>
       </div>
 

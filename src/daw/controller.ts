@@ -1,4 +1,16 @@
-import { DAW_SLOT_COUNT, cloneLoopState, type DawProject, type SavedLoop, type WorkingSession } from '../loops/types'
+import { normalizeWorkingSession } from '../loops/normalize'
+import {
+  DAW_SLOT_COUNT,
+  cloneDrumState,
+  cloneSynthState,
+  loopBpm,
+  type DawProject,
+  type LoopKind,
+  type SavedLoop,
+  type WorkingSession,
+} from '../loops/types'
+import type { MelodicSequencerController } from '../melodic/controller'
+import type { AnalogPatch } from '../patch'
 import type { BeatSequencerController } from '../sequencer/controller'
 import {
   deleteLoop,
@@ -10,8 +22,20 @@ import {
   saveLoop,
   saveWorkingSession,
 } from '../storage/db'
+import { setupArrangementPlayback } from './playback'
 
-export async function setupDawWorkspace(beat: BeatSequencerController): Promise<void> {
+type Options = {
+  beat: BeatSequencerController
+  melodic: MelodicSequencerController
+  patch: AnalogPatch
+  loadPatch: (patch: AnalogPatch) => void
+}
+
+export type DawWorkspaceController = {
+  requestAutosave: () => void
+}
+
+export async function setupDawWorkspace({ beat, melodic, patch, loadPatch }: Options): Promise<DawWorkspaceController> {
   let loops: SavedLoop[] = []
   let selectedLoopId: string | null = null
   let project: DawProject = await loadDawProject() ?? emptyProject()
@@ -20,29 +44,36 @@ export async function setupDawWorkspace(beat: BeatSequencerController): Promise<
   const library = required<HTMLElement>('#daw-library')
   const status = required<HTMLElement>('#daw-status')
   const loopName = required<HTMLInputElement>('#loop-name')
-  const loopSave = required<HTMLButtonElement>('#loop-save')
-  const loopSaveStatus = required<HTMLElement>('#loop-save-status')
+  const saveStatus = required<HTMLElement>('#loop-save-status')
 
   setupWorkspaceTabs()
 
-  const restore = await loadWorkingSession()
-  if (restore) {
-    beat.sequencer.loadState(restore.state)
-    beat.refresh()
-    loopSaveStatus.textContent = 'Working session restored from this browser.'
-  }
-
-  beat.sequencer.onChange = () => {
+  const requestAutosave = (): void => {
     if (saveTimer !== undefined) window.clearTimeout(saveTimer)
     saveTimer = window.setTimeout(() => {
       const session: WorkingSession = {
         id: 'working-session',
-        state: beat.sequencer.getState(),
+        drum: beat.sequencer.getState(),
+        synth: melodic.getState(),
         updatedAt: Date.now(),
       }
       void saveWorkingSession(session)
     }, 350)
   }
+
+  const rawRestore = await loadWorkingSession()
+  const restore = normalizeWorkingSession(rawRestore, patch)
+  if (restore) {
+    beat.sequencer.loadState(restore.drum)
+    melodic.sequencer.loadState(restore.synth)
+    loadPatch(restore.synth.patch)
+    beat.refresh()
+    melodic.refresh()
+    saveStatus.textContent = 'Working session restored from this browser.'
+  }
+
+  beat.sequencer.onChange = requestAutosave
+  melodic.sequencer.onChange = requestAutosave
 
   const refreshLibrary = async (): Promise<void> => {
     loops = await listLoops()
@@ -67,11 +98,21 @@ export async function setupDawWorkspace(beat: BeatSequencerController): Promise<
   async function loadLoop(id: string): Promise<void> {
     const loop = loops.find((candidate) => candidate.id === id)
     if (!loop) return
-    beat.sequencer.loadState(loop)
-    beat.refresh()
+
+    if (loop.drum) {
+      beat.sequencer.loadState(loop.drum)
+      beat.refresh()
+    }
+    if (loop.synth) {
+      melodic.sequencer.loadState(loop.synth)
+      loadPatch(loop.synth.patch)
+      melodic.refresh()
+    }
+
     loopName.value = loop.name
     showWorkspace('instrument')
-    loopSaveStatus.textContent = `Loaded ${loop.name}. Changes autosave as your working session.`
+    saveStatus.textContent = `Loaded ${loop.name}. Changes autosave as your working session.`
+    requestAutosave()
   }
 
   async function removeLoop(id: string): Promise<void> {
@@ -81,26 +122,32 @@ export async function setupDawWorkspace(beat: BeatSequencerController): Promise<
     await refreshLibrary()
   }
 
-  loopSave.addEventListener('click', async () => {
+  const saveNamedLoop = async (kind: LoopKind): Promise<void> => {
     const name = loopName.value.trim() || `Loop ${loops.length + 1}`
     const now = Date.now()
     const loop: SavedLoop = {
       id: createId(),
       name,
+      kind,
+      drum: kind === 'synth' ? undefined : cloneDrumState(beat.sequencer.getState()),
+      synth: kind === 'drum' ? undefined : cloneSynthState(melodic.getState()),
       createdAt: now,
       updatedAt: now,
-      ...cloneLoopState(beat.sequencer.getState()),
     }
 
     await saveLoop(loop)
     const persistent = await requestPersistentStorage()
     selectedLoopId = loop.id
     loopName.value = name
-    loopSaveStatus.textContent = persistent
-      ? `Saved ${name} locally. Persistent storage is enabled.`
-      : `Saved ${name} locally in this browser.`
+    saveStatus.textContent = persistent
+      ? `Saved ${name} (${kind}) locally with persistent storage.`
+      : `Saved ${name} (${kind}) locally in this browser.`
     await refreshLibrary()
-  })
+  }
+
+  required<HTMLButtonElement>('#loop-save-drums').addEventListener('click', () => { void saveNamedLoop('drum') })
+  required<HTMLButtonElement>('#loop-save-synth').addEventListener('click', () => { void saveNamedLoop('synth') })
+  required<HTMLButtonElement>('#loop-save-combined').addEventListener('click', () => { void saveNamedLoop('combined') })
 
   required<HTMLButtonElement>('#daw-refresh').addEventListener('click', () => { void refreshLibrary() })
   required<HTMLButtonElement>('#daw-clear').addEventListener('click', async () => {
@@ -136,7 +183,14 @@ export async function setupDawWorkspace(beat: BeatSequencerController): Promise<
     })
   })
 
+  setupArrangementPlayback({
+    getProject: () => project,
+    getLoops: () => loops,
+    status,
+  })
+
   await refreshLibrary()
+  return { requestAutosave }
 }
 
 function setupWorkspaceTabs(): void {
@@ -182,7 +236,7 @@ function renderLibrary(
     const title = document.createElement('strong')
     title.textContent = loop.name
     const meta = document.createElement('small')
-    meta.textContent = `${loop.bpm} BPM · ${Math.round(loop.swing * 100)}% swing`
+    meta.textContent = `${loop.kind.toUpperCase()} · ${loopBpm(loop)} BPM`
     copy.append(title, meta)
 
     const actions = document.createElement('div')
@@ -206,6 +260,8 @@ function renderArrangement(project: DawProject, loops: SavedLoop[]): void {
     wrapper.classList.toggle('filled', Boolean(loop))
     const label = button.querySelector<HTMLElement>('strong')
     if (label) label.textContent = loop?.name ?? 'EMPTY'
+    const kind = button.querySelector<HTMLElement>('[data-slot-kind]')
+    if (kind) kind.textContent = loop?.kind.toUpperCase() ?? ''
   })
 }
 

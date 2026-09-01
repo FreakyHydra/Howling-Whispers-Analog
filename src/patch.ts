@@ -57,3 +57,14 @@ export const DEFAULT_PATCH: AnalogPatch = {
 export function clonePatch(patch: AnalogPatch): AnalogPatch {
   return structuredClone(patch)
 }
+
+export function replacePatch(target: AnalogPatch, source: AnalogPatch): void {
+  const copy = clonePatch(source)
+  target.name = copy.name
+  target.oscillators = copy.oscillators
+  target.filter = copy.filter
+  target.envelope = copy.envelope
+  target.lfo = copy.lfo
+  target.drive = copy.drive
+  target.master = copy.master
+}

@@ -1,0 +1,28 @@
+.loop-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.daw-actions .seq-action:disabled,
+.loop-save-actions .seq-action:disabled {
+  opacity: .42;
+  cursor: wait;
+}
+
+[data-slot-kind] {
+  margin-left: 6px;
+  color: #9d6b4b;
+  letter-spacing: .08em;
+}
+
+@media (max-width: 900px) {
+  .loop-save-actions { justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  .loop-save-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

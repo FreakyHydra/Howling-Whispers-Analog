@@ -1,3 +1,4 @@
+import { normalizeSavedLoop } from '../loops/normalize'
 import type { DawProject, SavedLoop, WorkingSession } from '../loops/types'
 
 const DB_NAME = 'howling-whispers-analog'
@@ -15,7 +16,13 @@ export async function listLoops(): Promise<SavedLoop[]> {
   const db = await openDatabase()
   return new Promise((resolve, reject) => {
     const request = db.transaction(LOOP_STORE, 'readonly').objectStore(LOOP_STORE).getAll()
-    request.onsuccess = () => resolve((request.result as SavedLoop[]).sort((a, b) => b.updatedAt - a.updatedAt))
+    request.onsuccess = () => {
+      const loops = (request.result as unknown[])
+        .map(normalizeSavedLoop)
+        .filter((loop): loop is SavedLoop => Boolean(loop))
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+      resolve(loops)
+    }
     request.onerror = () => reject(request.error ?? new Error('Could not read saved loops'))
   })
 }
@@ -33,8 +40,8 @@ export async function saveWorkingSession(session: WorkingSession): Promise<void>
   await put(STATE_STORE, session)
 }
 
-export async function loadWorkingSession(): Promise<WorkingSession | undefined> {
-  return get<WorkingSession>(STATE_STORE, 'working-session')
+export async function loadWorkingSession(): Promise<unknown> {
+  return get<unknown>(STATE_STORE, 'working-session')
 }
 
 export async function saveDawProject(project: DawProject): Promise<void> {

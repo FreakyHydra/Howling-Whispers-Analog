@@ -1,4 +1,5 @@
 import { renderDawMarkup } from '../daw/markup'
+import { renderMelodicSequencerMarkup } from '../melodic/markup'
 import type { AnalogPatch } from '../patch'
 import { renderBeatSequencerMarkup } from '../sequencer/markup'
 import { formatValue, waveLabel } from './format'
@@ -10,7 +11,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
         <div>
           <p class="eyebrow">THE HOWLING WHISPERS</p>
           <h1>ANALOG</h1>
-          <p class="subtitle">Virtual analog laboratory · Concept 0.4</p>
+          <p class="subtitle">Virtual analog laboratory · Concept 0.5</p>
         </div>
         <div class="status-cluster">
           <span class="lamp" aria-hidden="true"></span>
@@ -56,13 +57,14 @@ export function renderAnalogUi(patch: AnalogPatch): string {
           </div>
 
           ${renderBeatSequencerMarkup()}
+          ${renderMelodicSequencerMarkup()}
 
           <section class="performance-strip">
             <div class="performance-copy">
               <p class="eyebrow">PLAY THE MACHINE</p>
               <p>Click the keys or use A W S E D F T G Y H U J K.</p>
             </div>
-            <button id="panic" class="panic" type="button" title="Emergency stop: kills active synth notes, sequencer playback, and drum sources">PANIC / ALL STOP</button>
+            <button id="panic" class="panic" type="button" title="Emergency stop: kills active synth notes, melodic playback, sequencer playback, and drum sources">PANIC / ALL STOP</button>
           </section>
 
           <section class="keyboard" aria-label="One octave keyboard">
@@ -74,7 +76,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
       ${renderDawMarkup()}
 
       <footer>
-        <span>HW ANALOG · LOCAL LOOP LIBRARY + DAW SKETCH</span>
+        <span>HW ANALOG · DRUM + SYNTH LOOPS + WAV ARRANGER</span>
         <span>WEB AUDIO ENGINE</span>
       </footer>
     </main>
