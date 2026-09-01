@@ -6,7 +6,12 @@ const LABELS: Record<DrumLane, string> = {
   kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'HAT', '808': '808',
 }
 
-export function setupBeatSequencer(): BeatSequencer {
+export type BeatSequencerController = {
+  sequencer: BeatSequencer
+  refresh: () => void
+}
+
+export function setupBeatSequencer(): BeatSequencerController {
   const sequencer = new BeatSequencer()
   let selectedLane: DrumLane = 'kick'
 
@@ -55,13 +60,13 @@ export function setupBeatSequencer(): BeatSequencer {
   })
 
   bpm.addEventListener('input', () => {
-    sequencer.bpm = Number(bpm.value)
+    sequencer.setBpm(Number(bpm.value))
     bpmValue.value = `${sequencer.bpm} BPM`
   })
 
   swing.addEventListener('input', () => {
-    sequencer.swing = Number(swing.value) / 100
-    swingValue.value = `${swing.value}%`
+    sequencer.setSwing(Number(swing.value) / 100)
+    swingValue.value = `${Math.round(sequencer.swing * 100)}%`
   })
 
   document.querySelectorAll<HTMLInputElement>('[data-voice-param]').forEach((input) => {
@@ -91,11 +96,19 @@ export function setupBeatSequencer(): BeatSequencer {
     document.querySelectorAll(`[data-seq-step="${step}"]`).forEach((node) => node.classList.add('playhead'))
   }
 
+  const refresh = (): void => {
+    paintPattern(sequencer)
+    paintVoiceEditor(sequencer, selectedLane)
+    bpm.value = String(sequencer.bpm)
+    bpmValue.value = `${sequencer.bpm} BPM`
+    swing.value = String(Math.round(sequencer.swing * 100))
+    swingValue.value = `${Math.round(sequencer.swing * 100)}%`
+  }
+
   sequencer.loadTrapStarter()
-  paintPattern(sequencer)
-  paintVoiceEditor(sequencer, selectedLane)
+  refresh()
   window.addEventListener('beforeunload', () => sequencer.panic(), { once: true })
-  return sequencer
+  return { sequencer, refresh }
 }
 
 function paintPattern(sequencer: BeatSequencer): void {
