@@ -1,4 +1,4 @@
-import { DRUM_LANES, createDefaultDrumKit, type DrumLane, type DrumVoiceSettings } from './types'
+import { DRUM_LANES, createDefaultDrumKit, type DrumKit, type DrumLane, type DrumVoiceSettings } from './types'
 
 export class DrumEngine {
   private context?: AudioContext
@@ -21,8 +21,19 @@ export class DrumEngine {
     return { ...this.kit[lane] }
   }
 
+  getKit(): DrumKit {
+    return Object.fromEntries(
+      DRUM_LANES.map((lane) => [lane, { ...this.kit[lane] }]),
+    ) as DrumKit
+  }
+
   updateVoice(lane: DrumLane, changes: Partial<DrumVoiceSettings>): void {
     Object.assign(this.kit[lane], changes)
+    this.applyMix()
+  }
+
+  applyKit(kit: DrumKit): void {
+    DRUM_LANES.forEach((lane) => Object.assign(this.kit[lane], kit[lane]))
     this.applyMix()
   }
 
