@@ -1,6 +1,7 @@
 import { SynthEngine } from './audio/synth-engine'
 import { setupPerformanceControls } from './input/performance'
 import { DEFAULT_PATCH, clonePatch, type AnalogPatch } from './patch'
+import { setupBeatSequencer } from './sequencer/controller'
 import { renderAnalogUi } from './ui/markup'
 import { bindPatchControls } from './ui/patch-controls'
 
@@ -14,4 +15,5 @@ export function bootAnalogApp(): void {
   app.innerHTML = renderAnalogUi(patch)
   bindPatchControls({ patch, synth })
   setupPerformanceControls(synth)
+  setupBeatSequencer()
 }

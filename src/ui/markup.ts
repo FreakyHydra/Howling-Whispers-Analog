@@ -1,4 +1,5 @@
 import type { AnalogPatch } from '../patch'
+import { renderBeatSequencerMarkup } from '../sequencer/markup'
 import { formatValue, waveLabel } from './format'
 
 export function renderAnalogUi(patch: AnalogPatch): string {
@@ -8,7 +9,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
         <div>
           <p class="eyebrow">THE HOWLING WHISPERS</p>
           <h1>ANALOG</h1>
-          <p class="subtitle">Virtual analog laboratory · Concept 0.1</p>
+          <p class="subtitle">Virtual analog laboratory · Concept 0.2</p>
         </div>
         <div class="status-cluster">
           <span class="lamp" aria-hidden="true"></span>
@@ -47,6 +48,8 @@ export function renderAnalogUi(patch: AnalogPatch): string {
           </section>
         </div>
 
+        ${renderBeatSequencerMarkup()}
+
         <section class="performance-strip">
           <div class="performance-copy">
             <p class="eyebrow">PLAY THE MACHINE</p>
@@ -61,7 +64,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
       </section>
 
       <footer>
-        <span>HW ANALOG · FIRST WORKING CONCEPT</span>
+        <span>HW ANALOG · SYNTH + BEAT SEQUENCER</span>
         <span>WEB AUDIO ENGINE</span>
       </footer>
     </main>
