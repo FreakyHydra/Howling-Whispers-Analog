@@ -5,7 +5,12 @@ const computerKeys = new Map([
   ['t', 66], ['g', 67], ['y', 68], ['h', 69], ['u', 70], ['j', 71], ['k', 72],
 ])
 
-export function setupPerformanceControls(synth: SynthEngine, onPanic?: () => void): void {
+type Options = {
+  onPanic?: () => void
+  onNoteInput?: (midi: number) => void
+}
+
+export function setupPerformanceControls(synth: SynthEngine, options: Options = {}): void {
   const status = document.querySelector<HTMLSpanElement>('#audio-status')
   const lamp = document.querySelector<HTMLSpanElement>('.lamp')
   const panic = document.querySelector<HTMLButtonElement>('#panic')
@@ -21,6 +26,7 @@ export function setupPerformanceControls(synth: SynthEngine, onPanic?: () => voi
   }
 
   const startNote = async (midi: number): Promise<void> => {
+    options.onNoteInput?.(midi)
     if (activeMidi === midi) return
     if (activeMidi !== undefined) synth.noteOff(activeMidi)
     activeMidi = midi
@@ -38,12 +44,12 @@ export function setupPerformanceControls(synth: SynthEngine, onPanic?: () => voi
 
   panic.addEventListener('click', () => {
     synth.panic()
-    onPanic?.()
+    options.onPanic?.()
     clearActiveKey('ALL AUDIO STOPPED')
   })
 
   window.addEventListener('keydown', (event) => {
-    if (event.repeat) return
+    if (event.repeat || isEditable(event.target)) return
     const midi = computerKeys.get(event.key.toLowerCase())
     if (midi === undefined) return
     event.preventDefault()
@@ -51,6 +57,7 @@ export function setupPerformanceControls(synth: SynthEngine, onPanic?: () => voi
   })
 
   window.addEventListener('keyup', (event) => {
+    if (isEditable(event.target)) return
     const midi = computerKeys.get(event.key.toLowerCase())
     if (midi === undefined) return
     stopNote(midi)
@@ -67,4 +74,8 @@ export function setupPerformanceControls(synth: SynthEngine, onPanic?: () => voi
     key.addEventListener('pointercancel', () => stopNote(midi))
     key.addEventListener('lostpointercapture', () => stopNote(midi))
   })
+}
+
+function isEditable(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
 }

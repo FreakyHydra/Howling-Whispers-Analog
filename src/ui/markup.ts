@@ -1,7 +1,10 @@
+import { renderChipMarkup } from '../chip/markup'
 import { renderDawMarkup } from '../daw/markup'
+import { renderFxMarkup } from '../fx/markup'
 import { renderMelodicSequencerMarkup } from '../melodic/markup'
 import type { AnalogPatch } from '../patch'
 import { renderBeatSequencerMarkup } from '../sequencer/markup'
+import { renderTransportMarkup } from '../transport/markup'
 import { formatValue, waveLabel } from './format'
 
 export function renderAnalogUi(patch: AnalogPatch): string {
@@ -11,7 +14,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
         <div>
           <p class="eyebrow">THE HOWLING WHISPERS</p>
           <h1>ANALOG</h1>
-          <p class="subtitle">Virtual analog laboratory · Concept 0.5</p>
+          <p class="subtitle">Modular analog workstation · Iteration 0.6</p>
         </div>
         <div class="status-cluster">
           <span class="lamp" aria-hidden="true"></span>
@@ -19,8 +22,13 @@ export function renderAnalogUi(patch: AnalogPatch): string {
         </div>
       </header>
 
+      ${renderTransportMarkup()}
+
       <nav class="workspace-tabs" aria-label="Analog workspaces" role="tablist">
-        <button class="workspace-tab active" data-workspace-tab="instrument" type="button" role="tab" aria-selected="true">ANALOG</button>
+        <button class="workspace-tab active" data-workspace-tab="instrument" type="button" role="tab" aria-selected="true">SYNTH</button>
+        <button class="workspace-tab" data-workspace-tab="sequencers" type="button" role="tab" aria-selected="false">SEQUENCERS</button>
+        <button class="workspace-tab" data-workspace-tab="chip" type="button" role="tab" aria-selected="false">CHIP</button>
+        <button class="workspace-tab" data-workspace-tab="fx" type="button" role="tab" aria-selected="false">FX</button>
         <button class="workspace-tab" data-workspace-tab="daw" type="button" role="tab" aria-selected="false">DAW</button>
       </nav>
 
@@ -56,27 +64,55 @@ export function renderAnalogUi(patch: AnalogPatch): string {
             </section>
           </div>
 
-          ${renderBeatSequencerMarkup()}
-          ${renderMelodicSequencerMarkup()}
-
           <section class="performance-strip">
             <div class="performance-copy">
               <p class="eyebrow">PLAY THE MACHINE</p>
               <p>Click the keys or use A W S E D F T G Y H U J K.</p>
             </div>
-            <button id="panic" class="panic" type="button" title="Emergency stop: kills active synth notes, melodic playback, sequencer playback, and drum sources">PANIC / ALL STOP</button>
+            <button id="panic" class="panic" type="button" title="Emergency stop: kills all active synth and sequencer sources">PANIC / ALL STOP</button>
           </section>
 
-          <section class="keyboard" aria-label="One octave keyboard">
+          <section class="keyboard" aria-label="Synth keyboard">
             ${keyboardMarkup()}
           </section>
         </section>
       </section>
 
+      <section id="workspace-sequencers" class="workspace" data-workspace="sequencers" hidden>
+        <section class="module-bay" aria-label="Sequencer module bay">
+          <div class="module-bay-copy">
+            <p class="eyebrow">MODULE BAY</p>
+            <h2>SUMMON, HIDE, COLLAPSE OR REORDER</h2>
+            <p>Removing a module only hides it. Its pattern keeps playing and its state is preserved.</p>
+          </div>
+          <div class="module-bay-actions">
+            <button class="module-summon" data-module-summon="rhythm" type="button">RHYTHM SEQUENCER ACTIVE</button>
+            <button class="module-summon" data-module-summon="melodic" type="button">SYNTH SEQUENCER ACTIVE</button>
+          </div>
+        </section>
+
+        <div id="sequencer-rack">
+          ${renderBeatSequencerMarkup()}
+          ${renderMelodicSequencerMarkup()}
+        </div>
+
+        <section class="sequencer-keyboard-panel">
+          <div class="performance-copy">
+            <p class="eyebrow">STEP NOTE ENTRY</p>
+            <p>Select a synth-sequencer step above, then press a key here. The key still plays the synth while assigning that note.</p>
+          </div>
+          <section class="keyboard compact-keyboard" aria-label="Sequencer note-entry keyboard">
+            ${keyboardMarkup()}
+          </section>
+        </section>
+      </section>
+
+      ${renderChipMarkup()}
+      ${renderFxMarkup()}
       ${renderDawMarkup()}
 
       <footer>
-        <span>HW ANALOG · DRUM + SYNTH LOOPS + WAV ARRANGER</span>
+        <span>HW ANALOG · SHARED CLOCK · MODULAR SEQUENCERS · CHIP · MASTER FX · WAV ARRANGER</span>
         <span>WEB AUDIO ENGINE</span>
       </footer>
     </main>

@@ -1,11 +1,10 @@
-import { createSafetyChain, type SafetyChain } from '../audio/safety'
+import { analogAudio } from '../audio/runtime'
 import { scheduleDrumHit } from '../audio/schedule'
 import { DRUM_LANES, createDefaultDrumKit, type DrumKit, type DrumLane, type DrumVoiceSettings } from './types'
 
 export class DrumEngine {
   private context?: AudioContext
   private master?: GainNode
-  private safety?: SafetyChain
   private openHatBus?: GainNode
   private readonly kit = createDefaultDrumKit()
   private readonly channels = new Map<DrumLane, GainNode>()
@@ -13,11 +12,11 @@ export class DrumEngine {
 
   async arm(): Promise<void> {
     this.ensureGraph()
-    if (this.context?.state === 'suspended') await this.context.resume()
+    await analogAudio.arm()
   }
 
   get currentTime(): number {
-    return this.context?.currentTime ?? 0
+    return analogAudio.currentTime
   }
 
   getVoice(lane: DrumLane): DrumVoiceSettings {
@@ -77,14 +76,13 @@ export class DrumEngine {
   private ensureGraph(): void {
     if (this.context) return
 
-    const context = new AudioContext({ latencyHint: 'interactive' })
+    const context = analogAudio.getContext()
     const master = context.createGain()
-    const safety = createSafetyChain(context, context.destination)
     const openHatBus = context.createGain()
 
     master.gain.value = 0.78
     openHatBus.gain.value = 1
-    master.connect(safety.input)
+    master.connect(analogAudio.getInput())
     openHatBus.connect(master)
 
     DRUM_LANES.forEach((lane) => {
@@ -96,7 +94,6 @@ export class DrumEngine {
 
     this.context = context
     this.master = master
-    this.safety = safety
     this.openHatBus = openHatBus
     this.applyMix()
   }

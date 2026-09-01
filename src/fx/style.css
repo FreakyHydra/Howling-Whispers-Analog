@@ -1,0 +1,25 @@
+.fx-workspace {
+  border: 1px solid rgba(219,153,102,.3);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0b0908;
+}
+.fx-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(5,5,5,.72);
+}
+.fx-header h2 { margin: 0; color: var(--copper-bright); font: 400 1.35rem Georgia, serif; letter-spacing: .06em; }
+.fx-header > p { max-width: 520px; margin: 0; color: #82766f; font-size: .68rem; line-height: 1.5; }
+.fx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); }
+.fx-module { min-width: 0; padding: 22px; background: linear-gradient(180deg, rgba(255,255,255,.018), transparent), #0b0a09; }
+.fx-control { margin: 16px 0; }
+.fx-note { margin: 16px 0 0; color: #746a64; font-size: .65rem; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .fx-grid { grid-template-columns: 1fr; }
+  .fx-header { flex-direction: column; }
+}

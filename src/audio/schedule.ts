@@ -14,6 +14,7 @@ export function scheduleSynthNote(
   time: number,
   gateDuration: number,
   track?: Tracker,
+  previousMidi?: number,
 ): void {
   const mixer = context.createGain()
   const filter = context.createBiquadFilter()
@@ -25,7 +26,8 @@ export function scheduleSynthNote(
   const attack = Math.min(Math.max(0.005, patch.envelope.attack), gate * 0.45)
   const decay = Math.min(Math.max(0.005, patch.envelope.decay), Math.max(0.005, gate - attack))
   const sustain = clamp(patch.envelope.sustain, 0.0001, 1)
-  const peak = Math.max(0.0001, step.velocity * patch.master * 0.72)
+  const accentGain = step.accent ? 0.9 : 0.72
+  const peak = Math.max(0.0001, step.velocity * patch.master * accentGain)
   const attackEnd = time + attack
   const decayEnd = Math.min(gateEnd, attackEnd + decay)
 
@@ -48,11 +50,15 @@ export function scheduleSynthNote(
   mixer.connect(filter).connect(drive).connect(amp).connect(destination)
 
   const frequency = midiToFrequency(step.midi)
+  const startFrequency = previousMidi === undefined ? frequency : midiToFrequency(previousMidi)
   patch.oscillators.forEach((settings) => {
     const oscillator = tracked(context.createOscillator(), track)
     const level = context.createGain()
     oscillator.type = settings.waveform
-    oscillator.frequency.setValueAtTime(frequency, time)
+    oscillator.frequency.setValueAtTime(step.slide && previousMidi !== undefined ? startFrequency : frequency, time)
+    if (step.slide && previousMidi !== undefined) {
+      oscillator.frequency.exponentialRampToValueAtTime(frequency, time + Math.min(0.065, gate * 0.55))
+    }
     oscillator.detune.setValueAtTime(settings.detune, time)
     level.gain.setValueAtTime(settings.level, time)
     oscillator.connect(level).connect(mixer)
@@ -81,7 +87,7 @@ function midiToFrequency(midi: number): number {
 }
 
 function saturationCurve(amount: number): Float32Array<ArrayBuffer> {
-  const curve = new Float32Array(1024)
+  const curve = new Float32Array<ArrayBuffer>(1024)
   const drive = 1 + clamp(amount, 0, 1) * 22
   for (let i = 0; i < curve.length; i += 1) {
     const x = (i * 2) / (curve.length - 1) - 1

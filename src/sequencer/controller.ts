@@ -1,3 +1,4 @@
+import type { MasterTransport } from '../transport/transport'
 import { BeatSequencer } from './sequencer'
 import { DRUM_LANES, type DrumLane } from './types'
 import { formatVoiceValue, type VoiceNumericParam } from './voice-format'
@@ -11,17 +12,14 @@ export type BeatSequencerController = {
   refresh: () => void
 }
 
-export function setupBeatSequencer(): BeatSequencerController {
-  const sequencer = new BeatSequencer()
+export function setupBeatSequencer(transport: MasterTransport): BeatSequencerController {
+  const sequencer = new BeatSequencer(transport)
   let selectedLane: DrumLane = 'kick'
 
   const play = requiredButton('#seq-play')
   const clear = requiredButton('#seq-clear')
   const trap = requiredButton('#seq-trap')
-  const bpm = requiredInput('#seq-bpm')
-  const bpmValue = requiredOutput('#seq-bpm-value')
-  const swing = requiredInput('#seq-swing')
-  const swingValue = requiredOutput('#seq-swing-value')
+  const length = requiredSelect('#seq-length')
 
   document.querySelectorAll<HTMLButtonElement>('[data-seq-lane][data-seq-step]').forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -40,13 +38,8 @@ export function setupBeatSequencer(): BeatSequencerController {
   })
 
   play.addEventListener('click', async () => {
-    if (sequencer.playing) {
-      sequencer.stop()
-      play.textContent = 'PLAY'
-      return
-    }
-    await sequencer.start()
-    play.textContent = 'STOP'
+    if (sequencer.playing) sequencer.stop()
+    else await sequencer.start()
   })
 
   clear.addEventListener('click', () => {
@@ -59,14 +52,9 @@ export function setupBeatSequencer(): BeatSequencerController {
     paintPattern(sequencer)
   })
 
-  bpm.addEventListener('input', () => {
-    sequencer.setBpm(Number(bpm.value))
-    bpmValue.value = `${sequencer.bpm} BPM`
-  })
-
-  swing.addEventListener('input', () => {
-    sequencer.setSwing(Number(swing.value) / 100)
-    swingValue.value = `${Math.round(sequencer.swing * 100)}%`
+  length.addEventListener('change', () => {
+    sequencer.setLength(Number(length.value))
+    refresh()
   })
 
   document.querySelectorAll<HTMLInputElement>('[data-voice-param]').forEach((input) => {
@@ -96,13 +84,16 @@ export function setupBeatSequencer(): BeatSequencerController {
     document.querySelectorAll(`[data-seq-step="${step}"]`).forEach((node) => node.classList.add('playhead'))
   }
 
+  transport.subscribe(() => {
+    play.textContent = sequencer.playing ? 'STOP DRUMS' : 'PLAY DRUMS'
+    play.classList.toggle('active', sequencer.playing)
+  })
+
   const refresh = (): void => {
     paintPattern(sequencer)
     paintVoiceEditor(sequencer, selectedLane)
-    bpm.value = String(sequencer.bpm)
-    bpmValue.value = `${sequencer.bpm} BPM`
-    swing.value = String(Math.round(sequencer.swing * 100))
-    swingValue.value = `${Math.round(sequencer.swing * 100)}%`
+    length.value = String(sequencer.length)
+    paintLength(sequencer.length)
   }
 
   sequencer.loadTrapStarter()
@@ -113,10 +104,23 @@ export function setupBeatSequencer(): BeatSequencerController {
 
 function paintPattern(sequencer: BeatSequencer): void {
   DRUM_LANES.forEach((lane) => {
-    sequencer.pattern[lane].forEach((velocity, step) => {
+    for (let step = 0; step < 64; step += 1) {
       const button = document.querySelector<HTMLButtonElement>(`[data-seq-lane="${lane}"][data-seq-step="${step}"]`)
-      if (button) paintStep(button, velocity)
-    })
+      if (button) paintStep(button, sequencer.pattern[lane][step] ?? 0)
+    }
+  })
+  paintLength(sequencer.length)
+}
+
+function paintLength(length: number): void {
+  document.querySelectorAll<HTMLElement>('[data-seq-step]').forEach((node) => {
+    node.hidden = Number(node.dataset.seqStep) >= length
+  })
+  document.querySelectorAll<HTMLElement>('[data-seq-ruler-step]').forEach((node) => {
+    node.hidden = Number(node.dataset.seqRulerStep) >= length
+  })
+  document.querySelectorAll<HTMLElement>('.sequence-ruler, .sequence-row').forEach((row) => {
+    row.style.setProperty('--seq-length', String(length))
   })
 }
 
@@ -152,20 +156,12 @@ function paintToggle(button: HTMLButtonElement, active: boolean): void {
   button.setAttribute('aria-pressed', String(active))
 }
 
-function requiredButton(selector: string): HTMLButtonElement {
-  const element = document.querySelector<HTMLButtonElement>(selector)
-  if (!element) throw new Error(`Missing sequencer button ${selector}`)
-  return element
-}
-
-function requiredInput(selector: string): HTMLInputElement {
-  const element = document.querySelector<HTMLInputElement>(selector)
-  if (!element) throw new Error(`Missing sequencer input ${selector}`)
-  return element
-}
-
-function requiredOutput(selector: string): HTMLOutputElement {
-  const element = document.querySelector<HTMLOutputElement>(selector)
-  if (!element) throw new Error(`Missing sequencer output ${selector}`)
+function requiredButton(selector: string): HTMLButtonElement { return required<HTMLButtonElement>(selector) }
+function requiredInput(selector: string): HTMLInputElement { return required<HTMLInputElement>(selector) }
+function requiredOutput(selector: string): HTMLOutputElement { return required<HTMLOutputElement>(selector) }
+function requiredSelect(selector: string): HTMLSelectElement { return required<HTMLSelectElement>(selector) }
+function required<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector)
+  if (!element) throw new Error(`Missing sequencer control ${selector}`)
   return element
 }

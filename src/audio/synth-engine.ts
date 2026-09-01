@@ -1,4 +1,5 @@
-import { createSafetyChain, oscillatorMixHeadroom, type SafetyChain } from './safety'
+import { analogAudio } from './runtime'
+import { oscillatorMixHeadroom } from './safety'
 import { clonePatch, type AnalogPatch } from '../patch'
 
 type ActiveNote = {
@@ -17,7 +18,6 @@ export class SynthEngine {
   private filter?: BiquadFilterNode
   private drive?: WaveShaperNode
   private master?: GainNode
-  private safety?: SafetyChain
   private lfo?: OscillatorNode
   private lfoDepth?: GainNode
   private activeNote?: ActiveNote
@@ -28,7 +28,7 @@ export class SynthEngine {
 
   async arm(): Promise<void> {
     this.ensureGraph()
-    if (this.context?.state === 'suspended') await this.context.resume()
+    await analogAudio.arm()
   }
 
   setPatch(nextPatch: AnalogPatch): void {
@@ -91,12 +91,11 @@ export class SynthEngine {
   private ensureGraph(): void {
     if (this.context) return
 
-    const context = new AudioContext({ latencyHint: 'interactive' })
+    const context = analogAudio.getContext()
     const mixer = context.createGain()
     const filter = context.createBiquadFilter()
     const drive = context.createWaveShaper()
     const master = context.createGain()
-    const safety = createSafetyChain(context, context.destination)
     const lfo = context.createOscillator()
     const lfoDepth = context.createGain()
 
@@ -106,7 +105,7 @@ export class SynthEngine {
     mixer.connect(filter)
     filter.connect(drive)
     drive.connect(master)
-    master.connect(safety.input)
+    master.connect(analogAudio.getInput())
 
     lfo.connect(lfoDepth)
     lfoDepth.connect(filter.frequency)
@@ -117,7 +116,6 @@ export class SynthEngine {
     this.filter = filter
     this.drive = drive
     this.master = master
-    this.safety = safety
     this.lfo = lfo
     this.lfoDepth = lfoDepth
 
@@ -171,7 +169,7 @@ function midiToFrequency(midi: number): number {
 
 function makeDriveCurve(amount: number): Float32Array<ArrayBuffer> {
   const samples = 2048
-  const curve = new Float32Array(samples)
+  const curve = new Float32Array<ArrayBuffer>(samples)
   const k = 1 + Math.max(0, amount) * 55
 
   for (let i = 0; i < samples; i += 1) {

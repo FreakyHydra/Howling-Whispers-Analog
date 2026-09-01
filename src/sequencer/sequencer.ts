@@ -1,51 +1,48 @@
 import { cloneDrumState, type DrumLoopState } from '../loops/types'
+import type { MasterTransport } from '../transport/transport'
 import { DrumEngine } from './drum-engine'
 import {
   ACCENT_VELOCITY,
   DRUM_LANES,
   NORMAL_VELOCITY,
-  STEP_COUNT,
   emptyPattern,
+  resizePattern,
   trapStarterPattern,
   type BeatPattern,
   type DrumLane,
   type DrumVoiceSettings,
+  type PatternLength,
 } from './types'
-
-const LOOKAHEAD_MS = 25
-const SCHEDULE_AHEAD_SECONDS = 0.1
 
 export class BeatSequencer {
   readonly engine = new DrumEngine()
-  pattern: BeatPattern = emptyPattern()
-  bpm = 140
-  swing = 0.12
-  playing = false
+  pattern: BeatPattern = emptyPattern(16)
+  length: PatternLength = 16
   onStep?: (step: number) => void
   onChange?: () => void
 
-  private step = 0
-  private nextStepTime = 0
-  private timer?: number
-  private visualTimers = new Set<number>()
+  constructor(private readonly transport: MasterTransport) {
+    transport.register({
+      id: 'beat',
+      length: () => this.length,
+      schedule: (step, time) => this.scheduleStep(step, time),
+      visual: (step) => this.onStep?.(step),
+      stop: () => this.onStep?.(-1),
+    })
+  }
+
+  get bpm(): number { return this.transport.bpm }
+  get swing(): number { return this.transport.swing }
+  get playing(): boolean { return this.transport.playing && this.transport.isClientActive('beat') }
 
   async start(): Promise<void> {
-    if (this.playing) return
     await this.engine.arm()
-    this.playing = true
-    this.step = 0
-    this.nextStepTime = this.engine.currentTime + 0.05
-    this.schedule()
-    this.timer = window.setInterval(() => this.schedule(), LOOKAHEAD_MS)
+    this.transport.setClientActive('beat', true)
+    if (!this.transport.playing) await this.transport.play()
   }
 
   stop(): void {
-    this.playing = false
-    if (this.timer !== undefined) window.clearInterval(this.timer)
-    this.timer = undefined
-    this.visualTimers.forEach((timer) => window.clearTimeout(timer))
-    this.visualTimers.clear()
-    this.onStep?.(-1)
+    this.transport.setClientActive('beat', false)
   }
 
   panic(): void {
@@ -54,6 +51,7 @@ export class BeatSequencer {
   }
 
   toggle(lane: DrumLane, step: number): number {
+    if (step < 0 || step >= this.length) return 0
     const next = this.pattern[lane][step] > 0 ? 0 : NORMAL_VELOCITY
     this.pattern[lane][step] = next
     this.changed()
@@ -61,6 +59,7 @@ export class BeatSequencer {
   }
 
   toggleAccent(lane: DrumLane, step: number): number {
+    if (step < 0 || step >= this.length) return 0
     const current = this.pattern[lane][step]
     const next = current >= ACCENT_VELOCITY ? NORMAL_VELOCITY : ACCENT_VELOCITY
     this.pattern[lane][step] = next
@@ -69,22 +68,30 @@ export class BeatSequencer {
   }
 
   clear(): void {
-    this.pattern = emptyPattern()
+    this.pattern = emptyPattern(this.length)
     this.changed()
   }
 
   loadTrapStarter(): void {
-    this.pattern = trapStarterPattern()
+    this.pattern = trapStarterPattern(this.length)
+    this.changed()
+  }
+
+  setLength(value: number): void {
+    const next = normalizeLength(value)
+    if (next === this.length) return
+    this.length = next
+    this.pattern = resizePattern(this.pattern, next)
     this.changed()
   }
 
   setBpm(value: number): void {
-    this.bpm = Math.min(220, Math.max(40, Math.round(value)))
+    this.transport.setBpm(value)
     this.changed()
   }
 
   setSwing(value: number): void {
-    this.swing = Math.min(0.4, Math.max(0, value))
+    this.transport.setSwing(value)
     this.changed()
   }
 
@@ -105,6 +112,7 @@ export class BeatSequencer {
     return cloneDrumState({
       bpm: this.bpm,
       swing: this.swing,
+      length: this.length,
       pattern: this.pattern,
       kit: this.engine.getKit(),
     })
@@ -112,9 +120,10 @@ export class BeatSequencer {
 
   loadState(state: DrumLoopState): void {
     const copy = cloneDrumState(state)
-    this.bpm = copy.bpm
-    this.swing = copy.swing
-    this.pattern = copy.pattern
+    this.length = normalizeLength(copy.length)
+    this.transport.setBpm(copy.bpm)
+    this.transport.setSwing(copy.swing)
+    this.pattern = resizePattern(copy.pattern, this.length)
     this.engine.applyKit(copy.kit)
     this.changed()
   }
@@ -123,33 +132,17 @@ export class BeatSequencer {
     this.onChange?.()
   }
 
-  private schedule(): void {
-    if (!this.playing) return
-
-    while (this.nextStepTime < this.engine.currentTime + SCHEDULE_AHEAD_SECONDS) {
-      this.scheduleStep(this.step, this.nextStepTime)
-      this.advance()
-    }
-  }
-
   private scheduleStep(step: number, time: number): void {
     DRUM_LANES.forEach((lane) => {
-      const velocity = this.pattern[lane][step]
+      const velocity = this.pattern[lane][step] ?? 0
       if (velocity > 0) this.engine.play(lane, time, velocity)
     })
-
-    const delay = Math.max(0, (time - this.engine.currentTime) * 1000)
-    const timer = window.setTimeout(() => {
-      this.visualTimers.delete(timer)
-      if (this.playing) this.onStep?.(step)
-    }, delay)
-    this.visualTimers.add(timer)
   }
+}
 
-  private advance(): void {
-    const base = 60 / Math.max(40, this.bpm) / 4
-    const swingOffset = this.step % 2 === 0 ? this.swing : -this.swing
-    this.nextStepTime += base * (1 + swingOffset)
-    this.step = (this.step + 1) % STEP_COUNT
-  }
+function normalizeLength(value: number): PatternLength {
+  if (value <= 8) return 8
+  if (value <= 16) return 16
+  if (value <= 32) return 32
+  return 64
 }
