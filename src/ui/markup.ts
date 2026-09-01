@@ -1,3 +1,4 @@
+import { renderDawMarkup } from '../daw/markup'
 import type { AnalogPatch } from '../patch'
 import { renderBeatSequencerMarkup } from '../sequencer/markup'
 import { formatValue, waveLabel } from './format'
@@ -9,7 +10,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
         <div>
           <p class="eyebrow">THE HOWLING WHISPERS</p>
           <h1>ANALOG</h1>
-          <p class="subtitle">Virtual analog laboratory · Concept 0.3</p>
+          <p class="subtitle">Virtual analog laboratory · Concept 0.4</p>
         </div>
         <div class="status-cluster">
           <span class="lamp" aria-hidden="true"></span>
@@ -17,54 +18,63 @@ export function renderAnalogUi(patch: AnalogPatch): string {
         </div>
       </header>
 
-      <section class="synth-panel" aria-label="Howling Whispers Analog synthesizer">
-        <div class="panel-grid oscillators">
-          ${[0, 1, 2].map((index) => oscillatorSection(patch, index)).join('')}
-        </div>
+      <nav class="workspace-tabs" aria-label="Analog workspaces" role="tablist">
+        <button class="workspace-tab active" data-workspace-tab="instrument" type="button" role="tab" aria-selected="true">ANALOG</button>
+        <button class="workspace-tab" data-workspace-tab="daw" type="button" role="tab" aria-selected="false">DAW</button>
+      </nav>
 
-        <div class="panel-grid lower-grid">
-          <section class="module">
-            <div class="module-title"><span>VCF</span><small>12 dB LOW PASS</small></div>
-            ${range('filter-cutoff', 'Cutoff', 80, 12000, patch.filter.cutoff, 1, 'Hz')}
-            ${range('filter-resonance', 'Resonance', 0.1, 18, patch.filter.resonance, 0.1, '')}
-            ${range('drive', 'Drive', 0, 1, patch.drive, 0.01, '')}
-          </section>
-
-          <section class="module envelope-module">
-            <div class="module-title"><span>ENV</span><small>AMPLITUDE</small></div>
-            <div class="quad-controls">
-              ${range('attack', 'Attack', 0.005, 2, patch.envelope.attack, 0.005, 's')}
-              ${range('decay', 'Decay', 0.01, 2, patch.envelope.decay, 0.01, 's')}
-              ${range('sustain', 'Sustain', 0.01, 1, patch.envelope.sustain, 0.01, '')}
-              ${range('release', 'Release', 0.02, 4, patch.envelope.release, 0.01, 's')}
-            </div>
-          </section>
-
-          <section class="module">
-            <div class="module-title"><span>LFO</span><small>FILTER MOTION</small></div>
-            ${range('lfo-rate', 'Rate', 0.05, 12, patch.lfo.rate, 0.05, 'Hz')}
-            ${range('lfo-depth', 'Depth', 0, 1800, patch.lfo.depth, 1, 'Hz')}
-            ${range('master', 'Master', 0, 0.85, patch.master, 0.01, '')}
-          </section>
-        </div>
-
-        ${renderBeatSequencerMarkup()}
-
-        <section class="performance-strip">
-          <div class="performance-copy">
-            <p class="eyebrow">PLAY THE MACHINE</p>
-            <p>Click the keys or use A W S E D F T G Y H U J K.</p>
+      <section id="workspace-instrument" class="workspace" data-workspace="instrument">
+        <section class="synth-panel" aria-label="Howling Whispers Analog synthesizer">
+          <div class="panel-grid oscillators">
+            ${[0, 1, 2].map((index) => oscillatorSection(patch, index)).join('')}
           </div>
-          <button id="panic" class="panic" type="button" title="Emergency stop: kills active synth notes, sequencer playback, and drum sources">PANIC / ALL STOP</button>
-        </section>
 
-        <section class="keyboard" aria-label="One octave keyboard">
-          ${keyboardMarkup()}
+          <div class="panel-grid lower-grid">
+            <section class="module">
+              <div class="module-title"><span>VCF</span><small>12 dB LOW PASS</small></div>
+              ${range('filter-cutoff', 'Cutoff', 80, 12000, patch.filter.cutoff, 1, 'Hz')}
+              ${range('filter-resonance', 'Resonance', 0.1, 18, patch.filter.resonance, 0.1, '')}
+              ${range('drive', 'Drive', 0, 1, patch.drive, 0.01, '')}
+            </section>
+
+            <section class="module envelope-module">
+              <div class="module-title"><span>ENV</span><small>AMPLITUDE</small></div>
+              <div class="quad-controls">
+                ${range('attack', 'Attack', 0.005, 2, patch.envelope.attack, 0.005, 's')}
+                ${range('decay', 'Decay', 0.01, 2, patch.envelope.decay, 0.01, 's')}
+                ${range('sustain', 'Sustain', 0.01, 1, patch.envelope.sustain, 0.01, '')}
+                ${range('release', 'Release', 0.02, 4, patch.envelope.release, 0.01, 's')}
+              </div>
+            </section>
+
+            <section class="module">
+              <div class="module-title"><span>LFO</span><small>FILTER MOTION</small></div>
+              ${range('lfo-rate', 'Rate', 0.05, 12, patch.lfo.rate, 0.05, 'Hz')}
+              ${range('lfo-depth', 'Depth', 0, 1800, patch.lfo.depth, 1, 'Hz')}
+              ${range('master', 'Master', 0, 0.85, patch.master, 0.01, '')}
+            </section>
+          </div>
+
+          ${renderBeatSequencerMarkup()}
+
+          <section class="performance-strip">
+            <div class="performance-copy">
+              <p class="eyebrow">PLAY THE MACHINE</p>
+              <p>Click the keys or use A W S E D F T G Y H U J K.</p>
+            </div>
+            <button id="panic" class="panic" type="button" title="Emergency stop: kills active synth notes, sequencer playback, and drum sources">PANIC / ALL STOP</button>
+          </section>
+
+          <section class="keyboard" aria-label="One octave keyboard">
+            ${keyboardMarkup()}
+          </section>
         </section>
       </section>
 
+      ${renderDawMarkup()}
+
       <footer>
-        <span>HW ANALOG · SYNTH + EDITABLE RHYTHM MACHINE</span>
+        <span>HW ANALOG · LOCAL LOOP LIBRARY + DAW SKETCH</span>
         <span>WEB AUDIO ENGINE</span>
       </footer>
     </main>
