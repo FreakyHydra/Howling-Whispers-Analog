@@ -5,7 +5,7 @@ const computerKeys = new Map([
   ['t', 66], ['g', 67], ['y', 68], ['h', 69], ['u', 70], ['j', 71], ['k', 72],
 ])
 
-export function setupPerformanceControls(synth: SynthEngine): void {
+export function setupPerformanceControls(synth: SynthEngine, onPanic?: () => void): void {
   const status = document.querySelector<HTMLSpanElement>('#audio-status')
   const lamp = document.querySelector<HTMLSpanElement>('.lamp')
   const panic = document.querySelector<HTMLButtonElement>('#panic')
@@ -13,10 +13,10 @@ export function setupPerformanceControls(synth: SynthEngine): void {
 
   let activeMidi: number | undefined
 
-  const clearActiveKey = (): void => {
+  const clearActiveKey = (message = 'ENGINE READY'): void => {
     document.querySelectorAll('.key.pressed').forEach((element) => element.classList.remove('pressed'))
     activeMidi = undefined
-    status.textContent = 'ENGINE READY'
+    status.textContent = message
     lamp.classList.add('live')
   }
 
@@ -38,7 +38,8 @@ export function setupPerformanceControls(synth: SynthEngine): void {
 
   panic.addEventListener('click', () => {
     synth.panic()
-    clearActiveKey()
+    onPanic?.()
+    clearActiveKey('ALL AUDIO STOPPED')
   })
 
   window.addEventListener('keydown', (event) => {
