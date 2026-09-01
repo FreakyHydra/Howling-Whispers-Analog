@@ -46,7 +46,9 @@ export type DawProject = {
   updatedAt: number
 }
 
-export const DAW_SLOT_COUNT = 12
+export const DAW_TRACK_COUNT = 3
+export const DAW_COLUMN_COUNT = 4
+export const DAW_SLOT_COUNT = DAW_TRACK_COUNT * DAW_COLUMN_COUNT
 export const SYNTH_STEP_COUNT = 16
 
 export function cloneDrumState(state: DrumLoopState): DrumLoopState {
@@ -81,4 +83,12 @@ export function createEmptySynthState(patch: AnalogPatch, bpm = 140, swing = 0.1
 
 export function loopBpm(loop: SavedLoop): number {
   return loop.drum?.bpm ?? loop.synth?.bpm ?? 140
+}
+
+export function dawTrackForSlot(index: number): number {
+  return Math.floor(index / DAW_COLUMN_COUNT)
+}
+
+export function dawColumnForSlot(index: number): number {
+  return index % DAW_COLUMN_COUNT
 }

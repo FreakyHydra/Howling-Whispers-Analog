@@ -1,5 +1,11 @@
 import { scheduleDrumHit, scheduleSynthNote } from '../audio/schedule'
-import type { DawProject, SavedLoop } from '../loops/types'
+import {
+  DAW_COLUMN_COUNT,
+  dawColumnForSlot,
+  loopBpm,
+  type DawProject,
+  type SavedLoop,
+} from '../loops/types'
 import { DRUM_LANES } from '../sequencer/types'
 
 export type ArrangementSchedule = {
@@ -15,29 +21,59 @@ export function scheduleArrangement(
   startTime: number,
   track?: (source: AudioScheduledSourceNode) => void,
 ): ArrangementSchedule {
-  let cursor = startTime
+  const masterBpm = arrangementBpm(project, loops)
+  const columnDuration = loopDuration(masterBpm)
   let usedSlots = 0
+  let duration = 0
 
-  project.slots.forEach((loopId) => {
+  project.slots.forEach((loopId, index) => {
     const loop = loops.find((candidate) => candidate.id === loopId)
     if (!loop) return
-    const bpm = loop.drum?.bpm ?? loop.synth?.bpm ?? 140
+
+    const column = dawColumnForSlot(index)
+    const loopStart = startTime + column * columnDuration
+    const bpm = loopBpm(loop)
     const swing = loop.drum?.swing ?? loop.synth?.swing ?? 0
-    scheduleLoop(context, destination, loop, cursor, bpm, swing, track)
-    cursor += loopDuration(bpm)
+
+    scheduleLoop(context, destination, loop, loopStart, bpm, swing, track)
     usedSlots += 1
+    duration = Math.max(
+      duration,
+      (column + 1) * columnDuration,
+      column * columnDuration + loopDuration(bpm),
+    )
   })
 
-  return { duration: Math.max(0, cursor - startTime), usedSlots }
+  return { duration, usedSlots }
 }
 
 export function arrangementDuration(project: DawProject, loops: SavedLoop[]): number {
-  return project.slots.reduce((total, loopId) => {
+  const masterBpm = arrangementBpm(project, loops)
+  const columnDuration = loopDuration(masterBpm)
+  let duration = 0
+
+  project.slots.forEach((loopId, index) => {
     const loop = loops.find((candidate) => candidate.id === loopId)
-    if (!loop) return total
-    const bpm = loop.drum?.bpm ?? loop.synth?.bpm ?? 140
-    return total + loopDuration(bpm)
-  }, 0)
+    if (!loop) return
+    const column = dawColumnForSlot(index)
+    duration = Math.max(
+      duration,
+      (column + 1) * columnDuration,
+      column * columnDuration + loopDuration(loopBpm(loop)),
+    )
+  })
+
+  return duration
+}
+
+function arrangementBpm(project: DawProject, loops: SavedLoop[]): number {
+  for (let column = 0; column < DAW_COLUMN_COUNT; column += 1) {
+    for (let index = column; index < project.slots.length; index += DAW_COLUMN_COUNT) {
+      const loop = loops.find((candidate) => candidate.id === project.slots[index])
+      if (loop) return loopBpm(loop)
+    }
+  }
+  return 140
 }
 
 function scheduleLoop(

@@ -1,4 +1,9 @@
-import { DAW_SLOT_COUNT } from '../loops/types'
+import {
+  DAW_COLUMN_COUNT,
+  DAW_SLOT_COUNT,
+  dawColumnForSlot,
+  dawTrackForSlot,
+} from '../loops/types'
 
 export function renderDawMarkup(): string {
   return `
@@ -8,7 +13,7 @@ export function renderDawMarkup(): string {
           <div>
             <p class="eyebrow">HOWLING WHISPERS</p>
             <h2>DAW</h2>
-            <p class="subtitle">Loop arrangement laboratory · Concept 0.2</p>
+            <p class="subtitle">3-track loop timeline · Concept 0.3</p>
           </div>
           <div class="daw-actions">
             <button id="daw-play" class="seq-action primary" type="button">PLAY ARRANGEMENT</button>
@@ -27,7 +32,8 @@ export function renderDawMarkup(): string {
           </aside>
 
           <section class="arranger">
-            <div class="module-title"><span>ARRANGEMENT</span><small>12 SEQUENTIAL LOOP SLOTS</small></div>
+            <div class="module-title"><span>ARRANGEMENT</span><small>3 TRACKS × 4 BARS</small></div>
+            <p class="daw-help">Rows are tracks. Columns are time. Clips stacked in the same column play together. For example, 01 + 05 + 09 are layered at bar 1.</p>
             <div id="daw-slots" class="daw-slots">
               ${Array.from({ length: DAW_SLOT_COUNT }, (_, index) => slot(index)).join('')}
             </div>
@@ -40,13 +46,18 @@ export function renderDawMarkup(): string {
 }
 
 function slot(index: number): string {
+  const track = dawTrackForSlot(index) + 1
+  const column = dawColumnForSlot(index) + 1
+  const number = String(index + 1).padStart(2, '0')
+  const aria = `Track ${track}, bar ${column}, slot ${index + 1}`
+
   return `
     <div class="daw-slot" data-daw-slot-wrap="${index}">
-      <button class="daw-slot-main" data-daw-slot="${index}" type="button">
-        <small>${String(index + 1).padStart(2, '0')} <span data-slot-kind></span></small>
+      <button class="daw-slot-main" data-daw-slot="${index}" type="button" aria-label="${aria}">
+        <small>${number} · T${track} · BAR ${column} <span data-slot-kind></span></small>
         <strong>EMPTY</strong>
       </button>
-      <button class="daw-slot-remove" data-daw-remove="${index}" type="button" aria-label="Remove loop from slot ${index + 1}">×</button>
+      <button class="daw-slot-remove" data-daw-remove="${index}" type="button" aria-label="Remove loop from ${aria}">×</button>
     </div>
   `
 }
