@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "build": "npm run check:architecture && tsc --noEmit && vite build",
+    "check": "npm run build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "devDependencies": {
