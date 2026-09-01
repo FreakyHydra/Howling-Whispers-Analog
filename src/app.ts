@@ -14,6 +14,6 @@ export function bootAnalogApp(): void {
 
   app.innerHTML = renderAnalogUi(patch)
   bindPatchControls({ patch, synth })
-  setupPerformanceControls(synth)
-  setupBeatSequencer()
+  const sequencer = setupBeatSequencer()
+  setupPerformanceControls(synth, () => sequencer.panic())
 }
