@@ -135,7 +135,9 @@ export class MasterEffects {
 
 function quantizeCurve(bits: number): Float32Array<ArrayBuffer> {
   const size = 4096
-  const curve = new Float32Array<ArrayBuffer>(size)
+  const curve: Float32Array<ArrayBuffer> = new Float32Array(
+    new ArrayBuffer(size * Float32Array.BYTES_PER_ELEMENT),
+  )
   const levels = Math.max(4, 2 ** Math.round(clamp(bits, 2, 16)))
   for (let index = 0; index < size; index += 1) {
     const x = (index * 2) / (size - 1) - 1
