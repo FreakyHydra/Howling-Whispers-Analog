@@ -27,7 +27,10 @@ export class BeatSequencer {
       length: () => this.length,
       schedule: (step, time) => this.scheduleStep(step, time),
       visual: (step) => this.onStep?.(step),
-      stop: () => this.onStep?.(-1),
+      stop: () => {
+        this.engine.panic()
+        this.onStep?.(-1)
+      },
     })
   }
 
