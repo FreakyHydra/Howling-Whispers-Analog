@@ -9,7 +9,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
         <div>
           <p class="eyebrow">THE HOWLING WHISPERS</p>
           <h1>ANALOG</h1>
-          <p class="subtitle">Virtual analog laboratory · Concept 0.2</p>
+          <p class="subtitle">Virtual analog laboratory · Concept 0.3</p>
         </div>
         <div class="status-cluster">
           <span class="lamp" aria-hidden="true"></span>
@@ -55,7 +55,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
             <p class="eyebrow">PLAY THE MACHINE</p>
             <p>Click the keys or use A W S E D F T G Y H U J K.</p>
           </div>
-          <button id="panic" class="panic" type="button">PANIC</button>
+          <button id="panic" class="panic" type="button" title="Emergency stop: kills active synth notes, sequencer playback, and drum sources">PANIC / ALL STOP</button>
         </section>
 
         <section class="keyboard" aria-label="One octave keyboard">
@@ -64,7 +64,7 @@ export function renderAnalogUi(patch: AnalogPatch): string {
       </section>
 
       <footer>
-        <span>HW ANALOG · SYNTH + BEAT SEQUENCER</span>
+        <span>HW ANALOG · SYNTH + EDITABLE RHYTHM MACHINE</span>
         <span>WEB AUDIO ENGINE</span>
       </footer>
     </main>
