@@ -11,6 +11,7 @@ import { setupTransportControls } from './transport/controller'
 import { MasterTransport } from './transport/transport'
 import { renderAnalogUi } from './ui/markup'
 import { bindPatchControls } from './ui/patch-controls'
+import { setupWorkspaceNavigation } from './ui/workspaces'
 
 export function bootAnalogApp(): void {
   const app = document.querySelector<HTMLDivElement>('#app')
@@ -22,6 +23,7 @@ export function bootAnalogApp(): void {
   let requestAutosave = (): void => {}
 
   app.innerHTML = renderAnalogUi(patch)
+  setupWorkspaceNavigation()
 
   const patchControls = bindPatchControls({
     patch,

@@ -1,7 +1,8 @@
+.workspace-tabs { flex-wrap: wrap; }
+
 .sequence-ruler,
 .sequence-row {
   grid-template-columns: 84px repeat(var(--seq-length, 16), minmax(30px, 1fr));
-  min-width: calc(84px + var(--seq-length, 16) * 35px);
 }
 
 .sequencer-controls {
@@ -42,10 +43,10 @@
 }
 .sequencer-keyboard-panel > .performance-copy { padding: 16px 20px 0; }
 .compact-keyboard { height: 150px; }
-
 .workspace[hidden] { display: none !important; }
 
 @media (max-width: 760px) {
+  .workspace-tab { flex: 1 1 120px; min-width: 0; }
   .sequencer-controls { grid-template-columns: 1fr; }
   .melodic-top-controls { align-items: flex-start; flex-direction: column; }
   .compact-keyboard { height: 140px; }
