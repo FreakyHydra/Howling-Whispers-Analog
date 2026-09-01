@@ -87,7 +87,10 @@ function midiToFrequency(midi: number): number {
 }
 
 function saturationCurve(amount: number): Float32Array<ArrayBuffer> {
-  const curve = new Float32Array<ArrayBuffer>(1024)
+  const size = 1024
+  const curve: Float32Array<ArrayBuffer> = new Float32Array(
+    new ArrayBuffer(size * Float32Array.BYTES_PER_ELEMENT),
+  )
   const drive = 1 + clamp(amount, 0, 1) * 22
   for (let i = 0; i < curve.length; i += 1) {
     const x = (i * 2) / (curve.length - 1) - 1
