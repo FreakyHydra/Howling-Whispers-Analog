@@ -1,4 +1,5 @@
 import { SynthEngine } from './audio/synth-engine'
+import { setupDawWorkspace } from './daw/controller'
 import { setupPerformanceControls } from './input/performance'
 import { DEFAULT_PATCH, clonePatch, type AnalogPatch } from './patch'
 import { setupBeatSequencer } from './sequencer/controller'
@@ -14,6 +15,13 @@ export function bootAnalogApp(): void {
 
   app.innerHTML = renderAnalogUi(patch)
   bindPatchControls({ patch, synth })
-  const sequencer = setupBeatSequencer()
-  setupPerformanceControls(synth, () => sequencer.panic())
+
+  const beat = setupBeatSequencer()
+  setupPerformanceControls(synth, () => beat.sequencer.panic())
+
+  void setupDawWorkspace(beat).catch((error: unknown) => {
+    console.error('Analog local workspace failed to initialize', error)
+    const status = document.querySelector<HTMLElement>('#loop-save-status')
+    if (status) status.textContent = 'Local storage could not be initialized in this browser.'
+  })
 }
