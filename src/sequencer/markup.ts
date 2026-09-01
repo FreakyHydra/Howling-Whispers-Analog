@@ -5,7 +5,8 @@ const LABELS: Record<DrumLane, string> = {
   kick: 'KICK',
   snare: 'SNARE',
   clap: 'CLAP',
-  hat: 'HAT',
+  hat: 'CLOSED HAT',
+  openHat: 'OPEN HAT',
   '808': '808',
 }
 
@@ -74,7 +75,7 @@ export function renderBeatSequencerMarkup(): string {
         <div class="voice-controls">
           ${voiceRange('level', 'Level', 0, 1, kit.kick.level, 0.01)}
           ${voiceRange('tune', 'Tune', -24, 24, kit.kick.tune, 1)}
-          ${voiceRange('decay', 'Decay', 0.03, 2.4, kit.kick.decay, 0.01)}
+          ${voiceRange('decay', 'Decay', 0.03, 2.8, kit.kick.decay, 0.01)}
           ${voiceRange('tone', 'Tone', 0, 1, kit.kick.tone, 0.01)}
           ${voiceRange('pan', 'Pan', -1, 1, kit.kick.pan, 0.01)}
         </div>

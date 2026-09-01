@@ -1,3 +1,4 @@
+import { createSafetyChain, oscillatorMixHeadroom, type SafetyChain } from './safety'
 import { clonePatch, type AnalogPatch } from '../patch'
 
 type ActiveNote = {
@@ -7,6 +8,8 @@ type ActiveNote = {
   noteGain: GainNode
 }
 
+const VOICE_PEAK = 0.82
+
 export class SynthEngine {
   private patch: AnalogPatch
   private context?: AudioContext
@@ -14,6 +17,7 @@ export class SynthEngine {
   private filter?: BiquadFilterNode
   private drive?: WaveShaperNode
   private master?: GainNode
+  private safety?: SafetyChain
   private lfo?: OscillatorNode
   private lfoDepth?: GainNode
   private activeNote?: ActiveNote
@@ -69,8 +73,8 @@ export class SynthEngine {
     const decay = Math.max(0.005, this.patch.envelope.decay)
     const sustain = Math.max(0.0001, this.patch.envelope.sustain)
 
-    noteGain.gain.linearRampToValueAtTime(1, now + attack)
-    noteGain.gain.linearRampToValueAtTime(sustain, now + attack + decay)
+    noteGain.gain.linearRampToValueAtTime(VOICE_PEAK, now + attack)
+    noteGain.gain.linearRampToValueAtTime(VOICE_PEAK * sustain, now + attack + decay)
 
     this.activeNote = { midi, oscillators, oscillatorGains, noteGain }
   }
@@ -92,6 +96,7 @@ export class SynthEngine {
     const filter = context.createBiquadFilter()
     const drive = context.createWaveShaper()
     const master = context.createGain()
+    const safety = createSafetyChain(context, context.destination)
     const lfo = context.createOscillator()
     const lfoDepth = context.createGain()
 
@@ -101,7 +106,7 @@ export class SynthEngine {
     mixer.connect(filter)
     filter.connect(drive)
     drive.connect(master)
-    master.connect(context.destination)
+    master.connect(safety.input)
 
     lfo.connect(lfoDepth)
     lfoDepth.connect(filter.frequency)
@@ -112,6 +117,7 @@ export class SynthEngine {
     this.filter = filter
     this.drive = drive
     this.master = master
+    this.safety = safety
     this.lfo = lfo
     this.lfoDepth = lfoDepth
 
@@ -121,7 +127,9 @@ export class SynthEngine {
   private applyPatch(): void {
     if (!this.context) return
     const now = this.context.currentTime
+    const levels = this.patch.oscillators.map((settings) => settings.level)
 
+    this.mixer?.gain.setTargetAtTime(oscillatorMixHeadroom(levels), now, 0.015)
     this.filter?.frequency.setTargetAtTime(this.patch.filter.cutoff, now, 0.015)
     this.filter?.Q.setTargetAtTime(this.patch.filter.resonance, now, 0.015)
     if (this.drive) this.drive.curve = makeDriveCurve(this.patch.drive)

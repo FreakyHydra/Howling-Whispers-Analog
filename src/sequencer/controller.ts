@@ -3,7 +3,7 @@ import { DRUM_LANES, type DrumLane } from './types'
 import { formatVoiceValue, type VoiceNumericParam } from './voice-format'
 
 const LABELS: Record<DrumLane, string> = {
-  kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'HAT', '808': '808',
+  kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'CLOSED HAT', openHat: 'OPEN HAT', '808': '808',
 }
 
 export type BeatSequencerController = {

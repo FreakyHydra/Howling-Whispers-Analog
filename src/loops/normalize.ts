@@ -7,7 +7,14 @@ export function normalizeSavedLoop(value: unknown): SavedLoop | undefined {
   if (!isRecord(value)) return undefined
 
   if (value.kind === 'drum' || value.kind === 'synth' || value.kind === 'combined') {
-    return value as unknown as SavedLoop
+    const loop = value as unknown as SavedLoop
+    return {
+      ...loop,
+      drum: loop.drum ? cloneDrumState(loop.drum) : undefined,
+      synth: loop.synth ? cloneSynthState(loop.synth) : undefined,
+      createdAt: numberOrNow(loop.createdAt),
+      updatedAt: numberOrNow(loop.updatedAt),
+    }
   }
 
   if (isLegacyDrumState(value) && typeof value.id === 'string') {

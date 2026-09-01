@@ -1,3 +1,4 @@
+import { createSafetyChain } from '../audio/safety'
 import type { DawProject, SavedLoop } from '../loops/types'
 import { arrangementDuration, scheduleArrangement } from './audio'
 import { audioBufferToWav, downloadWav } from './wav'
@@ -41,13 +42,11 @@ export function setupArrangementPlayback({ getProject, getLoops, status }: Optio
     }
 
     context = new AudioContext({ latencyHint: 'interactive' })
-    const master = context.createGain()
-    master.gain.value = 0.78
-    master.connect(context.destination)
+    const safety = createSafetyChain(context, context.destination, 0.78)
     if (context.state === 'suspended') await context.resume()
 
     const start = context.currentTime + 0.06
-    const result = scheduleArrangement(context, master, project, loops, start, (source) => sources.add(source))
+    const result = scheduleArrangement(context, safety.input, project, loops, start, (source) => sources.add(source))
     play.disabled = true
     status.textContent = `Playing ${result.usedSlots} arranged loop${result.usedSlots === 1 ? '' : 's'}.`
 
@@ -78,10 +77,8 @@ export function setupArrangementPlayback({ getProject, getLoops, status }: Optio
       const sampleRate = 44100
       const tail = 3
       const offline = new OfflineAudioContext(2, Math.ceil((duration + tail) * sampleRate), sampleRate)
-      const master = offline.createGain()
-      master.gain.value = 0.78
-      master.connect(offline.destination)
-      scheduleArrangement(offline, master, project, loops, 0.02)
+      const safety = createSafetyChain(offline, offline.destination, 0.78)
+      scheduleArrangement(offline, safety.input, project, loops, 0.02)
       const rendered = await offline.startRendering()
       downloadWav(audioBufferToWav(rendered), `howling-whispers-arrangement-${Date.now()}.wav`)
       status.textContent = 'WAV rendered and downloaded.'
